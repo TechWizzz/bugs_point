@@ -8,7 +8,7 @@
         <v-card
           class="display-1"
           dark
-          color=""
+          color="" 
         >
           <v-card-text >My Profile</v-card-text>
         </v-card>
@@ -16,12 +16,12 @@
     </v-layout>
       <v-layout row >
           <v-flex xs12 md3 pa-3> 
-               <v-card >
+               <v-card>
           <v-card-text class="pa-2">
               <v-list>
                   <v-subheader>Main</v-subheader>
 
-          <v-list-tile>
+          <v-list-tile @click="notification = true;profile = false;changePass= false; bugd = false">
             <v-list-tile-action>
               <v-icon  color="grey">notification_important</v-icon>
               </v-list-tile-action>
@@ -30,7 +30,7 @@
             </v-list-tile-content>
           </v-list-tile>
           
-                    <v-list-tile @click="profile = true; bugd = false">
+                    <v-list-tile @click="notification = false;profile = true;changePass= false; bugd = false">
           <v-list-tile-action>
               <v-icon  color="grey">person</v-icon>
               </v-list-tile-action>
@@ -38,18 +38,20 @@
               <v-list-tile-title>Edit Profile</v-list-tile-title>
             </v-list-tile-content>
           </v-list-tile>
-                    <v-list-tile>
+
+                    <v-list-tile  @click="notification = false; bugd = false;changePass= true; profile= false">
                       <v-list-tile-action>
               <v-icon  color="grey">lock</v-icon> </v-list-tile-action>
             <v-list-tile-content>
               <v-list-tile-title>Change Password</v-list-tile-title>
             </v-list-tile-content>
           </v-list-tile>
+
         <v-divider></v-divider>
               <v-list>
                   <v-subheader>Bugs</v-subheader>
 
-          <v-list-tile @click="bugd = true, profile= false">
+          <v-list-tile @click="notification = false; bugd = true;changePass= false; profile= false">
             <v-list-tile-action>
               <v-icon  color="grey">list</v-icon>
             </v-list-tile-action>
@@ -70,12 +72,13 @@
         </v-list>
          <v-btn rounded @click="logout_function" outline large dark color="teal">Sign Out</v-btn>
         </v-list>
-          </v-card-text>
+          </v-card-text>  
         
         </v-card>
         </v-flex>
         <v-flex xs12 md9 pa-3>
-        <v-card height="500px" v-if="!bugd && !profile">
+
+        <v-card  v-if="notification">
             <v-subheader>My Notification</v-subheader>
           <v-card-text></v-card-text>
         </v-card>
@@ -204,6 +207,66 @@
 </v-form>
         </v-flex>
         </v-card>
+
+        <v-card style="height:100%">
+        <v-flex pa-4 md9 xs12 v-if="changePass" >
+    <v-container v-if="pdata">
+         <v-alert
+      v-model="alert"
+      dismissible
+      color="success"
+      icon="check_circle"
+      outline
+      type="success"
+    >
+      Password Successfully Updated.
+    </v-alert></v-container>
+
+    <v-container v-if="pdataPass">
+         <v-alert
+      v-model="alert"
+      dismissible
+      color="red"
+      icon="warning"
+      outline
+      type="alert"
+    >
+      Password Not Match.
+    </v-alert></v-container>
+          <v-subheader>Change Password</v-subheader>
+           <v-form 
+           ref="form"
+            
+                lazy-validation
+                enctype="multipart/form-data"
+                method='POST' 
+                >
+  <div class="form-row">
+    <div class="col-md-12 mb-3">
+      <label for="validationServer01">Old Password</label>
+      <input type="password" class="form-control" v-model="oldPassword" required>
+
+    </div>
+    <div class="col-md-12 mb-3">
+      <label for="validationServerUsername">New Password</label>
+      <div class="input-group">
+        <input type="password" class="form-control" v-model="newPassword" aria-describedby="inputGroupPrepend3" required>
+      </div>
+    </div>
+    <div class="col-md-12 mb-3">
+      <label for="validationServerUsername">Confirm Password</label>
+      <div class="input-group">
+        <input type="text" class="form-control" v-model="confirmPassword" aria-describedby="inputGroupPrepend3" required>
+      </div>
+    </div>
+
+  </div>
+
+
+ <v-btn color='primary' :loading='loading' type="button" @click="changePassword">Change Password</v-btn>
+</v-form>
+        </v-flex>
+        </v-card>
       </v-flex>
       </v-layout>
      </v-container>
@@ -232,9 +295,15 @@ export default {
        imageFile: '',
        image:'',
        mobile:'',
+       oldPassword:'',
+       newPassword:'',
+       confirmPassword:'',
        pdata: false,
+       pdataPass: false,
        loading: false,
        alert: true,
+       notification : true,
+       changePass : false,
       }
     },
      created() {
@@ -242,7 +311,44 @@ export default {
          this.getUserPost();
          this.editprofile();
     },
+    
      methods: {
+   async changePassword(){
+     this.pdata = false;
+     this.pdataPass = false;
+     if(this.newPassword === this.confirmPassword) {
+               this.loading = true;
+               let data = new FormData()
+                 data.append('oldPassword', this.oldPassword)
+                 data.append('newPassword',this.newPassword)
+                 data.append('id',this.id)
+                let url = 'http://127.0.0.1:3333/updatepassword'
+                let options = {
+                    headers: {
+                    'content-type': 'multipart/form-data'
+                    }
+                }
+              
+              await HTTP().post(url, data, options).then((data)=>{
+              
+              if(data.data){
+                 localStorage.setItem('token',data.data)
+                 setTimeout(() => {this.loading = false,this.pdata = true , this.alert =true;
+                 }, 2000)
+                  }
+                  else{
+                     this.loading = false;
+                     this.pdataPass = true;
+                     this.alert =true;
+                  }
+         })}
+         else{
+           this.loading = true;
+           this.loading = false;
+           this.pdataPass = true
+           this.alert =true; 
+         }
+   },
    async getUserPost(){
        
       let data = new FormData()
@@ -326,12 +432,14 @@ export default {
 				this.imageFile = ''
 				this.imageUrl = ''
 			}
-		},  
+    },  
+    
        logout_function(){
         localStorage.removeItem('token');
         store.dispatch('login_logout')
         this.$router.push({name:'home'})
       },
+
       async editprofile(){
         const token =   localStorage.getItem('token');
          let data = new FormData()
@@ -354,9 +462,9 @@ export default {
           this.imageUrl = 'http://127.0.0.1:3333/uploads/blogPicture/'+this.imageName
           }
     })
-      },
-      
-}}
+      }, 
+  },
+};
 </script>
 
 <style>

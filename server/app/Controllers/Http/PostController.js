@@ -3,6 +3,7 @@
 const Encryption = use('Encryption')
 const Post = use('App/Models/Post')
 const User = use('App/Models/User')
+
 const Like = use('App/Models/Like')
 const Comment = use('App/Models/Comment')
 const Helpers = use('Helpers')

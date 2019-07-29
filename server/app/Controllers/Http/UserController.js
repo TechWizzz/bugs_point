@@ -8,13 +8,14 @@ class UserController {
 
     async register({request})
     { 
+  
     const rules = {
       email: 'unique:users',
       mobile: 'unique:users'
     }
     
     const validation = await validate(request.all(), rules)
-  
+    
     if (validation.fails()) {
       session
         .withErrors(validation.messages())
@@ -37,6 +38,7 @@ class UserController {
      password,
      image
  }); 
+
     user.save();
 
     return 0;
@@ -65,7 +67,7 @@ class UserController {
             { 
               const token =  Encryption.encrypt(user)
               
-             return(token)
+              return(token)
             }
         }
        }
@@ -82,6 +84,22 @@ class UserController {
          const gender = token.gender;
          const image = token.image;
          return response.send({id,image, gender ,dob, name, mobile, email});
+      }
+
+      async updatepassword({request, response}){
+        const id =  request.input('id')
+        const newPassword = request.input('newPassword')
+        const user = await User.query().where('id',id).first()
+        const oldPassword = request.input('oldPassword')
+        const passwordVerified  = await Hash.verify(oldPassword,user.password)
+    
+        if(passwordVerified){
+           user.password = newPassword;
+           user.save();
+           const token =  Encryption.encrypt(user)
+        return response.send(token)
+        }
+         return 0;
       }
   
 
